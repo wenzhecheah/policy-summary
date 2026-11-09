@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Policy Summary</title>
+  <!-- VWA logo for the browser tab and home-screen shortcuts, from vwagroup.sg. -->
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/favicon.png">
+  <meta name="theme-color" content="#1B1464">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500&family=Jost:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="masthead-inner">
+      <a class="home-link" href="https://wenzhecheah.github.io/">&larr; All tools</a>
+      <span class="eyebrow">Voyage Wealth Advisory</span>
+      <h1>Policy Summary</h1>
+      <p class="masthead-tag">Every policy, one page.</p>
+    </div>
+  </header>
+  <main>
+    <div class="actions toolbar">
+      <button type="button" id="new-client">New client</button>
+      <button type="button" id="open-client">Open client file</button>
+      <button type="button" id="save-client">Save client file</button>
+      <button type="button" id="print">Print / Save as PDF</button>
+      <input type="file" id="open-file" accept=".json,application/json" hidden>
+    </div>
+    <p class="error" id="file-error" role="alert"></p>
+    <p class="hint">Nothing you enter leaves this page unless you save the client file. Save it before closing the page.</p>
+
+    <form id="form" novalidate>
+      <div class="panel">
+        <fieldset>
+          <legend>Client</legend>
+          <div class="grid4">
+            <label>Name <input type="text" data-client="name" autocomplete="off"></label>
+            <label>Date of birth <input type="date" data-client="dob"></label>
+            <label>Annual income <input type="number" inputmode="decimal" min="0" step="any" data-client="annualIncome"></label>
+            <label>Retirement income goal (monthly) <input type="number" inputmode="decimal" min="0" step="any" data-client="retirementGoal"></label>
+            <label>Prepared on <input type="date" data-client="preparedOn"></label>
+            <label>Prepared by <input type="text" data-client="adviserName" autocomplete="off"></label>
+            <label>Adviser's mobile <input type="tel" data-client="adviserMobile" autocomplete="off"></label>
+          </div>
+        </fieldset>
+      </div>
+      <div id="policies"></div>
+      <button type="button" id="add-policy">Add policy</button>
+    </form>
+
+    <section id="results">
+      <div class="report-head">
+        <h2 id="report-title">Policy Summary</h2>
+        <p id="report-date"></p>
+      </div>
+      <div class="cards" id="summary-cards"></div>
+
+      <h2>Coverage</h2>
+      <div class="table-wrap"><table id="coverage-table"></table></div>
+      <p class="footnote" id="coverage-note"></p>
+
+      <h2>Risk management</h2>
+      <div class="table-wrap"><table class="wide" id="protection-table"></table></div>
+
+      <h2>Wealth management</h2>
+      <div class="table-wrap"><table class="wide" id="wealth-table"></table></div>
+
+      <h2>Retirement payouts</h2>
+      <div class="table-wrap"><table id="timeline-table"></table></div>
+
+      <div class="report-foot" id="report-foot"></div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <span class="eyebrow">Voyage Wealth Advisory</span>
+      <a href="https://vwagroup.sg/">vwagroup.sg</a>
+    </div>
+  </footer>
+  <script src="config.js"></script>
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

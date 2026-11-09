@@ -1,0 +1,8 @@
+# macOS / Windows system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor and tool settings (per-device)
+.vscode/
+.claude/

@@ -1,0 +1,183 @@
+/* Colours and fonts from the Voyage Wealth Advisory website (vwagroup.sg). */
+:root {
+  --navy: #1b1464; --navy-deep: #110d40; --gold: #c99e10; --gold-soft: #e5c047;
+  --cream: #f1e5d1; --soft-blue: #6a8dff;
+  --bg: #f4f6fa; --surface: #fff; --text: #1a1a1a; --muted: #4a4a55;
+  --line: rgba(27, 20, 100, .12); --border: rgba(27, 20, 100, .25); --radius: 4px;
+  --page: 1440px; --gutter: clamp(16px, 3vw, 48px); --stripe: #f8f9fc;
+  --note: #faf5ec; --note-text: #4a4a55;
+  --oa: var(--navy); --sa: var(--gold); --ma: var(--soft-blue); --up: #1e7d4f; --down: #b3261e;
+}
+/* Elements marked hidden stay hidden whatever display a rule gives them. */
+[hidden] { display: none !important; }
+body { font-family: 'Jost', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; }
+.masthead { position: relative; background: var(--navy); color: #fff; padding: 32px var(--gutter) 36px; }
+/* The website's gold horizon line along the bottom of the header. */
+.masthead::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(to right, transparent, rgba(201, 158, 16, .6) 30%, rgba(201, 158, 16, .6) 70%, transparent); }
+.masthead-inner, .site-footer-inner { max-width: var(--page); margin: 0 auto; }
+.eyebrow { display: block; font-size: 12px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold-soft); margin-bottom: 10px; }
+.masthead h1 { margin: 0; font-size: clamp(28px, 6vw, 40px); font-weight: 700; letter-spacing: -.01em; line-height: 1.1; }
+.masthead-tag { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 20px;
+  color: rgba(255, 255, 255, .85); margin: 10px 0 0; }
+main { max-width: var(--page); margin: 0 auto; padding: 24px var(--gutter) 40px; }
+/* The form: one column of section cards, two columns on wide screens
+   (essentials on the left, options and "At 55" on the right). */
+form { display: grid; gap: 16px; }
+.form-cols, .form-col { display: grid; gap: 16px; align-content: start; min-width: 0; }
+@media (min-width: 900px) {
+  .form-cols { grid-template-columns: 1fr 1fr; align-items: start; }
+  form > button[type="submit"] { justify-self: start; min-width: 280px; }
+}
+.panel { background: var(--surface); border-radius: var(--radius); padding: 20px;
+  border-top: 2px solid var(--gold); box-shadow: 0 12px 28px -22px rgba(27, 20, 100, .35); }
+.panel-cream { background: var(--cream); }
+.panel-cream .limits, .panel-cream input, .panel-cream select { background: var(--surface); }
+fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 20px; min-width: 0; }
+legend { font-weight: 600; font-size: 17px; padding: 0; margin-bottom: 12px; color: var(--navy); }
+/* Short gold rule under each heading, as on the website. */
+legend::after { content: ""; display: block; width: 40px; height: 2px; background: var(--gold); margin-top: 8px; }
+details > .group { padding-top: 4px; }
+summary { font-weight: 600; font-size: 17px; cursor: pointer; color: var(--navy); }
+summary::marker { color: var(--gold); }
+details[open] summary { margin-bottom: 16px; }
+label { display: grid; gap: 6px; font-size: 14px; align-content: start; }
+input, select, button { font: inherit; font-size: 16px; padding: 10px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--surface); color: var(--text); min-width: 0; }
+input:focus, select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201, 158, 16, .25); }
+input[type="checkbox"] { accent-color: var(--navy); }
+/* Primary button, as on the website: gold with navy text. */
+button { background: var(--gold); color: var(--navy); border: 1px solid var(--gold); cursor: pointer;
+  font-weight: 600; letter-spacing: .2em; text-transform: uppercase; font-size: 14px; padding: 14px; }
+button:hover { background: var(--gold-soft); border-color: var(--gold-soft); }
+button:focus-visible { outline: 2px solid var(--navy); outline-offset: 2px; }
+[aria-invalid="true"] { border-color: var(--down); outline: 2px solid var(--down); }
+.error { margin: 0; color: var(--down); font-size: 14px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* Side-by-side fields: inputs line up at the bottom even when hints differ in length. */
+.row2 > label { display: flex; flex-direction: column; gap: 6px; }
+.row2 > label > input { margin-top: auto; }
+@media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } }
+table { width: 100%; border-collapse: collapse; background: var(--surface); }
+th, td { padding: 8px; text-align: right; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+.limits { font-size: 14px; background: var(--bg); border-radius: var(--radius); padding: 10px;
+  border-left: 3px solid var(--gold); }
+.limits:empty { display: none; }
+.limits dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; }
+.limits dd { margin: 0; text-align: right; }
+.note td { text-align: left; font-size: 13px; color: var(--note-text); background: var(--note); }
+/* Keep note text in view while the table is scrolled sideways. */
+.note td > div { position: sticky; left: 8px; max-width: min(900px, calc(100vw - 2 * var(--gutter) - 16px)); }
+.footnote { font-size: 12px; color: var(--muted); max-width: 120ch; }
+/* The table scrolls inside its own box, so the sideways scrollbar is always
+   on screen, and the header row stays visible while scrolling down. */
+.table-wrap { max-height: 75vh; overflow: auto; margin-top: 16px; border-radius: var(--radius); background: var(--surface);
+  border-top: 2px solid var(--gold); }
+thead th { position: sticky; top: 0; z-index: 1; background: var(--navy); color: #fff; font-weight: 500; }
+tbody tr:not(.note):nth-child(even) td { background: var(--stripe); }
+tbody tr:not(.note):hover td { background: rgba(201, 158, 16, .08); }
+.check { display: flex; align-items: flex-start; gap: 8px; }
+.check input { margin: 2px 0 0; padding: 0; width: 18px; height: 18px; flex: none; }
+.check > span { display: grid; gap: 4px; }
+.check:has(input:disabled) { opacity: .55; }
+.hint { font-size: 12px; color: var(--muted); }
+p.hint { margin: 0; }
+.group { display: grid; gap: 20px; }
+th:nth-child(2), td:nth-child(2) { text-align: left; }
+.tag { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+/* Results */
+#results h2 { margin: 32px 0 16px; color: var(--navy); font-size: 26px; }
+#results h2::after { content: ""; display: block; width: 40px; height: 2px; background: var(--gold); margin-top: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.card { background: var(--surface); border-radius: var(--radius); padding: 12px 14px; border-left: 2px solid var(--soft-blue); }
+.card.main { grid-column: 1 / -1; background: var(--navy); color: #fff; border-left: 0; border-top: 2px solid var(--gold); }
+.card.main .card-label { color: var(--gold-soft); }
+.card-label { font-size: 12px; color: var(--muted); }
+.card-value { font-size: 17px; font-weight: 600; margin-top: 2px; color: var(--navy); }
+.card.main .card-value { color: #fff; }
+.card.main .card-value { font-size: 26px; }
+.compare td.up { color: var(--up); }
+.compare td.down { color: var(--down); }
+.compare th:nth-child(2), .compare td:nth-child(2) { text-align: right; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.actions button { font-size: 12px; padding: 8px 12px; letter-spacing: .12em; background: var(--surface);
+  color: var(--navy); border: 1px solid var(--border); }
+.actions button:hover { border-color: var(--gold); background: var(--surface); }
+.chart { margin: 16px 0 0; background: var(--surface); border-radius: var(--radius); padding: 8px; border-top: 2px solid var(--gold); }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); }
+.chart .axis { font-size: 11px; fill: var(--muted); }
+.chart .marker { stroke: var(--navy); stroke-dasharray: 3 3; opacity: .5; }
+.chart .hit { fill: transparent; }
+.chart g:hover rect:not(.hit) { opacity: .8; }
+.c-oa { fill: var(--oa); background: var(--oa); }
+.c-sa { fill: var(--sa); background: var(--sa); }
+.c-ma { fill: var(--ma); background: var(--ma); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; padding: 6px 4px 0; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; }
+
+/* Footer */
+.site-footer { background: var(--navy-deep); color: rgba(255, 255, 255, .7); padding: 28px var(--gutter); font-size: 14px; }
+.site-footer .eyebrow { margin-bottom: 4px; }
+.site-footer a { color: #fff; text-decoration: none; border-bottom: 1px solid var(--gold); }
+.site-footer a:hover { color: var(--gold-soft); }
+
+@media print {
+  body { background: #fff; }
+  .masthead { background: #fff; color: #000; padding: 0 0 12px; }
+  .masthead .eyebrow, .masthead-tag { color: #000; }
+  form, .actions, #results > p.hint, .site-footer { display: none; }
+  main { max-width: none; padding: 0; }
+  .masthead::after { display: none; }
+  tbody tr:not(.note):nth-child(even) td { background: none; }
+  .table-wrap { max-height: none; overflow: visible; }
+  thead th { position: static; }
+  table { font-size: 10px; }
+  th, td { padding: 3px 4px; }
+  .chart, .card, tr { break-inside: avoid; }
+  .chart, .card, .c-oa, .c-sa, .c-ma, .note td, thead th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* Link back to the homepage that lists all VWA tools. */
+.home-link { display: inline-block; margin-bottom: 14px; color: rgba(255, 255, 255, .7); text-decoration: none;
+  font-size: 12px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; }
+.home-link:hover { color: #fff; }
+.home-link:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+@media print { .home-link { display: none; } }
+
+/* ---- Policy Summary additions ---- */
+.toolbar { margin-top: 0; }
+#file-error:empty { display: none; }
+form { margin-top: 16px; }
+.grid4 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+.grid4 > label { display: flex; flex-direction: column; gap: 6px; }
+.grid4 > label > input, .grid4 > label > select { margin-top: auto; }
+#policies { display: grid; gap: 16px; }
+#policies:empty::before { content: 'No policies yet. Use "Add policy" to add the first one.'; color: var(--muted); }
+#add-policy { justify-self: start; }
+button.remove { justify-self: start; background: var(--surface); color: var(--down); border-color: var(--border);
+  font-size: 12px; padding: 8px 12px; letter-spacing: .12em; }
+button.remove:hover { background: var(--surface); border-color: var(--down); }
+th.l, td.l { text-align: left; }
+.wide th, .wide td { white-space: nowrap; }
+.wide td:last-child { white-space: normal; min-width: 160px; }
+td.short { color: var(--down); font-weight: 600; }
+td.ok { color: var(--up); font-weight: 600; }
+tfoot td { font-weight: 600; border-top: 2px solid var(--border); }
+.table-wrap { max-height: none; }
+#results .report-head h2 { margin-bottom: 4px; }
+#report-date { margin: 0 0 16px; color: var(--muted); }
+.report-foot { margin-top: 32px; font-size: 13px; color: var(--muted); white-space: pre-line; max-width: 100ch; }
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  .masthead h1, .masthead-tag, main > p.hint, #file-error { display: none; }
+  #results h2 { margin: 16px 0 8px; font-size: 18px; break-after: avoid; }
+  .card-value { font-size: 14px; }
+  .wide { font-size: 8px; }
+  .wide th { white-space: normal; vertical-align: bottom; }
+  .wide td:last-child { min-width: 0; }
+  td.short, td.ok, tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
