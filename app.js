@@ -8,7 +8,7 @@ const dateLabel = s => { if (!s) return '–'; const [y, m, d] = s.split('-'); r
 const today = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
 const FREQUENCIES = [['monthly', 'Monthly'], ['yearly', 'Yearly'], ['single', 'Single premium']];
 
-const newClient = () => ({ ...blankClient(), preparedOn: today(), adviserName: ADVISER.name, adviserMobile: ADVISER.mobile });
+const newClient = () => ({ ...blankClient(), preparedOn: today(), adviserName: ADVISER.name, adviserMobile: phoneText(ADVISER.mobile) });
 let state = { client: newClient(), policies: [] };
 let unsaved = false;
 // The policy being entered or edited. It joins the list (and the report) only
@@ -28,7 +28,7 @@ const OTHER_INSURER = '__other';
 function fillClient() {
   for (const el of document.querySelectorAll('[data-client]')) {
     const v = state.client[el.dataset.client];
-    el.value = 'amount' in el.dataset ? amountText(v) : shown(v);
+    el.value = 'amount' in el.dataset ? amountText(v) : 'phone' in el.dataset ? phoneText(v) : shown(v);
   }
 }
 
@@ -140,6 +140,8 @@ const discardDraftOk = () => !draftChanged || confirm('Discard the policy in the
 
 byId('form').addEventListener('input', e => {
   const el = e.target;
+  // Phone fields: space as 1234 5678 while typing at the end (not mid-edit, so the cursor doesn't jump).
+  if ('phone' in el.dataset && el.selectionStart === el.value.length) el.value = phoneText(el.value);
   // Amount fields: flag anything that isn't an amount, and store 0 for it.
   let value = el.value;
   if ('amount' in el.dataset) {
@@ -170,6 +172,11 @@ byId('form').addEventListener('input', e => {
 // Leaving an amount field shows it as $x,xxx.xx (unless it isn't a valid amount).
 byId('form').addEventListener('focusout', e => {
   const el = e.target;
+  if ('phone' in el.dataset) {
+    el.value = phoneText(el.value);
+    state.client[el.dataset.client] = el.value;
+    renderReport();
+  }
   if (!('amount' in el.dataset)) return;
   const n = toAmount(el.value);
   if (!Number.isNaN(n)) el.value = amountText(n);
@@ -377,7 +384,7 @@ function renderReport() {
       <td class="l">${r.items.map(esc).join('<br>')}</td><td>${amount(r.lump)}</td><td>${amount(r.yearly)}</td><td>${amount(r.monthly)}</td>
       ${goal ? (r.monthly >= goal ? '<td class="ok">Met</td>' : `<td class="short">${money(goal - r.monthly)} short</td>`) : ''}</tr>`).join(''));
 
-  const by = [client.adviserName, client.adviserMobile && `M: ${client.adviserMobile}`].filter(Boolean).join('\n');
+  const by = [client.adviserName, client.adviserMobile && `M: ${phoneText(client.adviserMobile)}`].filter(Boolean).join('\n');
   const foot = `${by ? `Prepared by:\n${by}\n\n` : ''}${DISCLAIMER}`;
   byId('report-foot').textContent = foot;
   // Printed only: each portfolio page gets the Excel template's title and footer.
