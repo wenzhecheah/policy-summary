@@ -30,8 +30,10 @@ Edit `config.js` to change:
 - `ADVISER`: your name and mobile, filled in for every new client
 - `DISCLAIMER`: the text at the bottom of every report
 - `BENEFITS`: the benefits counted and the recommended cover for each, as a
-  multiple of annual income (death and TPD 9×, critical illness 4×)
+  multiple of annual income (Voyage's recommendation: 5× for death and TPD,
+  critical illness and early critical illness)
 - `POLICY_TYPES`: the policy types, and which table each one goes in
+- `INSURERS`: the insurers in the Insurer dropdown ("Others" lets you type one in)
 - `PAYMENT_MODES`, `LIFELONG_TO_AGE`
 
 ## Code

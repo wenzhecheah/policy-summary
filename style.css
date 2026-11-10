@@ -173,8 +173,10 @@ th.l, td.l { text-align: left; }
 .wide th, .wide td { white-space: nowrap; }
 .wide td:last-child { white-space: normal; min-width: 160px; }
 td.short { color: var(--down); font-weight: 600; }
+td.paid { color: var(--down); font-weight: 600; }
 td.ok { color: var(--up); font-weight: 600; }
 tfoot td { font-weight: 600; border-top: 2px solid var(--border); }
+tfoot .note td { font-weight: 400; }
 .table-wrap { max-height: none; }
 #results .report-head h2 { margin-bottom: 4px; }
 #report-date { margin: 0 0 16px; color: var(--muted); }
@@ -187,5 +189,5 @@ tfoot td { font-weight: 600; border-top: 2px solid var(--border); }
   .wide { font-size: 8px; }
   .wide th { white-space: normal; vertical-align: bottom; }
   .wide td:last-child { min-width: 0; }
-  td.short, td.ok, tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  td.short, td.ok, td.paid, tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }

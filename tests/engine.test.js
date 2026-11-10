@@ -33,12 +33,14 @@ test('cover is totalled per benefit and compared with income multiples', () => {
   const totals = call('coverageTotals', ps);
   assert.equal(totals.death, 500000);
   assert.equal(totals.ci, 100000);
-  const gaps = Object.fromEntries(call('coverageGaps', totals, 60000).map(g => [g.key, g]));
-  assert.deepEqual(gaps.death, { key: 'death', label: 'Death', have: 500000, need: 540000, gap: 40000 });
-  assert.equal(gaps.tpd.gap, 340000);
-  assert.equal(gaps.ci.gap, 140000);
-  assert.equal(gaps.eci.need, null); // no recommendation
-  assert.equal(gaps.eci.gap, null);
+  // Voyage's recommendation: 5x annual income for death, TPD, CI and early CI.
+  const gaps = Object.fromEntries(call('coverageGaps', totals, 120000).map(g => [g.key, g]));
+  assert.deepEqual(gaps.death, { key: 'death', label: 'Death', have: 500000, need: 600000, gap: 100000 });
+  assert.equal(gaps.tpd.gap, 400000);
+  assert.equal(gaps.ci.gap, 500000);
+  assert.equal(gaps.eci.need, 600000);
+  assert.equal(gaps.accidentalDeath.need, null); // no recommendation
+  assert.equal(gaps.accidentalDeath.gap, null);
   // More cover than needed is no shortfall, not a negative one.
   assert.equal(call('coverageGaps', { ...totals, death: 900000 }, 60000)[0].gap, 0);
 });

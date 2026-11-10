@@ -1,7 +1,7 @@
 // The page: reads the form, shows the report, saves and opens client files.
 const byId = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
-const money = n => n.toLocaleString('en-SG', { style: 'currency', currency: 'SGD', maximumFractionDigits: 0 });
+const money = n => n.toLocaleString('en-SG', { style: 'currency', currency: 'SGD' }); // $1,234.56
 const amount = n => n ? money(n) : '–';
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const dateLabel = s => { if (!s) return '–'; const [y, m, d] = s.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
@@ -18,10 +18,18 @@ let draft = blankPolicy(), editing = null, draftChanged = false;
 // A form value, stored as the same kind of value as the blank one.
 const parse = (blankValue, raw) => fit({ v: blankValue }, { v: raw }).v;
 const shown = v => v === 0 || v === null ? '' : v;
+// Amount fields (data-amount) take '$1,234.56' or '1234.56'; NaN if not a
+// valid amount. They show as $x,xxx.xx once the user leaves the field.
+const toAmount = raw => { const t = raw.replace(/[$,\s]/g, ''); return t === '' ? 0 : /^\d*\.?\d*$/.test(t) ? Number(t) : NaN; };
+const amountText = n => n ? money(n) : '';
+const OTHER_INSURER = '__other';
 
 // ---- Form ----
 function fillClient() {
-  for (const el of document.querySelectorAll('[data-client]')) el.value = shown(state.client[el.dataset.client]);
+  for (const el of document.querySelectorAll('[data-client]')) {
+    const v = state.client[el.dataset.client];
+    el.value = 'amount' in el.dataset ? amountText(v) : shown(v);
+  }
 }
 
 function policyForm(p) {
@@ -29,6 +37,9 @@ function policyForm(p) {
   const field = (key, label, type, value, extra = '') =>
     `<label>${label} <input type="${type}" data-field="${key}" value="${esc(shown(value))}" ${extra}></label>`;
   const num = (key, label, value, extra = 'min="0"') => field(key, label, 'number', value, `inputmode="decimal" step="any" ${extra}`);
+  const money$ = (key, label, value) =>
+    `<label>${label} <input type="text" inputmode="decimal" autocomplete="off" placeholder="$0.00" data-field="${key}" data-amount value="${esc(amountText(value))}"></label>`;
+  const known = INSURERS.includes(p.insurer), other = !!p.insurer && !known;
   const text = (key, label, value) => field(key, label, 'text', value, 'autocomplete="off"');
   const date = (key, label, value) => field(key, label, 'date', value);
   const wealth = groupOf(p.type) === 'wealth';
@@ -37,29 +48,32 @@ function policyForm(p) {
       <legend>${editing === null ? 'Add a policy' : `Edit policy ${editing + 1}`}</legend>
       <div class="grid4">
         <label>Type <select data-field="type">${options(POLICY_TYPES.map(t => [t.label, t.label]), p.type)}</select></label>
-        ${text('insurer', 'Insurer', p.insurer)}
+        <label>Insurer <select data-insurer>${options([['', '–'], ...INSURERS.map(x => [x, x]), [OTHER_INSURER, 'Others']],
+          known ? p.insurer : other ? OTHER_INSURER : '')}</select></label>
+        <label id="insurer-other"${other ? '' : ' hidden'}>Insurer name
+          <input type="text" data-field="insurer" autocomplete="off" value="${esc(other ? p.insurer : '')}"></label>
         ${text('plan', 'Plan + riders', p.plan)}
         ${text('policyNo', 'Policy / account no.', p.policyNo)}
         ${date('startDate', 'Start date', p.startDate)}
         ${date('premiumEndDate', 'Premium end date', p.premiumEndDate)}
         ${date('endDate', 'Policy end / maturity date', p.endDate)}
         <label>Payment mode <select data-field="paymentMode">${options([['', '–'], ...PAYMENT_MODES.map(m => [m, m])], p.paymentMode)}</select></label>
-        ${num('premium', 'Premium', p.premium)}
+        ${money$('premium', 'Premium', p.premium)}
         <label>Paid <select data-field="frequency">${options(FREQUENCIES, p.frequency)}</select></label>
       </div>
       <details${wealth ? '' : ' open'}>
         <summary>Cover (sum assured)</summary>
-        <div class="grid4">${BENEFITS.map(b => num(`cover.${b.key}`, b.label, p.cover[b.key])).join('')}</div>
+        <div class="grid4">${BENEFITS.map(b => money$(`cover.${b.key}`, b.label, p.cover[b.key])).join('')}</div>
       </details>
       <details${wealth ? ' open' : ''}>
         <summary>Value and payouts</summary>
         <div class="grid4">
-          ${num('currentValue', 'Current value (net realisable)', p.currentValue)}
-          ${num('projectedValue', 'Projected value at maturity', p.projectedValue)}
+          ${money$('currentValue', 'Current value (net realisable)', p.currentValue)}
+          ${money$('projectedValue', 'Projected value at maturity', p.projectedValue)}
           ${num('projectedIrr', 'Projected IRR (% a year)', p.projectedIrr, '')}
-          ${num('lumpSum', 'Lump sum payout', p.lumpSum)}
+          ${money$('lumpSum', 'Lump sum payout', p.lumpSum)}
           ${num('lumpSumAge', 'Lump sum paid at age', p.lumpSumAge)}
-          ${num('yearlyPayout', 'Regular payout (yearly)', p.yearlyPayout)}
+          ${money$('yearlyPayout', 'Regular payout (yearly)', p.yearlyPayout)}
           ${num('payoutFrom', 'Regular payout from age', p.payoutFrom)}
           ${num('payoutTo', `To age <span class="hint">(blank: lifelong, shown to ${LIFELONG_TO_AGE})</span>`, p.payoutTo)}
         </div>
@@ -78,10 +92,10 @@ function policyForm(p) {
 function policyList() {
   const rows = state.policies.map((p, i) => `<tr${i === editing ? ' class="editing"' : ''}>
     <td>${i + 1}</td><td class="l">${esc(p.type)}</td><td class="l">${esc(p.insurer || '–')}</td><td class="l">${esc(p.plan || '–')}</td>
-    <td>${amount(annualPremium(p))}</td>
+    <td>${amount(p.premium)}${p.premium ? ` <span class="hint">${FREQUENCIES.find(([v]) => v === p.frequency)[1].toLowerCase()}</span>` : ''}</td>
     <td class="row-actions"><button type="button" data-edit="${i}" aria-label="Edit ${esc(policyName(p))}">Edit</button>
       <button type="button" class="remove" data-remove="${i}" aria-label="Remove ${esc(policyName(p))}">Remove</button></td></tr>`).join('');
-  return table([['#'], ['Type', 'l'], ['Insurer', 'l'], ['Plan + riders', 'l'], ['Premium / yr'], ['', 'l']], rows)
+  return table([['#'], ['Type', 'l'], ['Insurer', 'l'], ['Plan + riders', 'l'], ['Premium'], ['', 'l']], rows)
     .replace('None yet.', 'No policies yet. Fill in the form above and press Add policy.');
 }
 
@@ -99,25 +113,51 @@ const discardDraftOk = () => !draftChanged || confirm('Discard the policy in the
 
 byId('form').addEventListener('input', e => {
   const el = e.target;
-  if (el.dataset.client) {
-    state.client[el.dataset.client] = parse(blankClient()[el.dataset.client], el.value);
+  // Amount fields: flag anything that isn't an amount, and store 0 for it.
+  let value = el.value;
+  if ('amount' in el.dataset) {
+    const n = toAmount(value);
+    el.setAttribute('aria-invalid', String(Number.isNaN(n)));
+    value = Number.isNaN(n) ? 0 : n;
+  }
+  if ('insurer' in el.dataset) {
+    const other = el.value === OTHER_INSURER, box = byId('insurer-other');
+    box.hidden = !other;
+    draft.insurer = other ? box.querySelector('input').value : el.value;
+    if (other) box.querySelector('input').focus();
+    draftChanged = true;
+  } else if (el.dataset.client) {
+    state.client[el.dataset.client] = parse(blankClient()[el.dataset.client], value);
     unsaved = true;
     renderReport();
   } else if (el.dataset.field) {
     // The draft only reaches the report once it is added.
     const [key, sub] = el.dataset.field.split('.');
-    if (sub) draft[key][sub] = parse(0, el.value);
-    else draft[key] = parse(blankPolicy()[key], el.value);
+    if (sub) draft[key][sub] = parse(0, value);
+    else draft[key] = parse(blankPolicy()[key], value);
     draftChanged = true;
   }
+});
+
+// Leaving an amount field shows it as $x,xxx.xx (unless it isn't a valid amount).
+byId('form').addEventListener('focusout', e => {
+  const el = e.target;
+  if (!('amount' in el.dataset)) return;
+  const n = toAmount(el.value);
+  if (!Number.isNaN(n)) el.value = amountText(n);
 });
 
 byId('policy-form').addEventListener('click', e => {
   const action = e.target.dataset.action;
   if (action === 'save') {
     if (!draft.insurer.trim() && !draft.plan.trim()) {
-      byId('policy-error').textContent = 'Enter the insurer or the plan name.';
-      byId('policy-form').querySelector('[data-field="insurer"]').focus();
+      byId('policy-error').textContent = 'Choose the insurer or enter the plan name.';
+      byId('policy-form').querySelector('[data-insurer]').focus();
+      return;
+    }
+    if (byId('policy-form').querySelector('[aria-invalid="true"]')) {
+      byId('policy-error').textContent = 'Fix the amounts outlined in red: use numbers only, like 1234.56.';
+      byId('policy-form').querySelector('[aria-invalid="true"]').focus();
       return;
     }
     if (editing === null) state.policies.push(draft);
@@ -231,7 +271,18 @@ function renderReport() {
     : 'Enter the client\'s annual income to see recommended cover and shortfalls.';
 
   const inGroup = group => policies.filter(p => groupOf(p.type) === group);
-  const premiumCells = p => `<td>${amount(annualPremium(p))}</td><td>${amount(annualPremium(p) / 12)}</td><td class="l">${esc(p.paymentMode || '–')}</td>`;
+  // Yearly and monthly premium, with the one the client actually pays in red. A single
+  // premium shows in the yearly column (in red) with the monthly cell left empty.
+  const premiumCells = p => {
+    const single = p.frequency === 'single';
+    const yearly = single ? p.premium : annualPremium(p);
+    const paid = col => (p.frequency === col || (single && col === 'yearly')) && p.premium ? ' class="paid"' : '';
+    return `<td${paid('yearly')}>${amount(yearly)}${single && p.premium ? ' <span class="tag">single</span>' : ''}</td>
+      <td${paid('monthly')}>${single ? '' : amount(yearly / 12)}</td><td class="l">${esc(p.paymentMode || '–')}</td>`;
+  };
+  const singleNote = list => list.some(p => p.frequency === 'single' && p.premium)
+    ? `<tr class="note"><td colspan="99"><div>Red: how the premium is paid. Single premiums are one-off payments, so they aren't in the yearly and monthly totals.</div></td></tr>`
+    : `<tr class="note"><td colspan="99"><div>Red: how the premium is paid.</div></td></tr>`;
   const basics = (p, i) => `<td>${i + 1}</td><td class="l">${esc(p.insurer || '–')}</td><td class="l">${esc(p.policyNo || '–')}</td>
     <td class="l">${esc(p.plan || '–')}</td><td class="l">${esc(p.type)}</td><td class="l">${dateLabel(p.startDate)}</td>`;
 
@@ -245,20 +296,20 @@ function renderReport() {
       <td class="l">${esc(p.remarks)}</td></tr>`).join(''),
     protection.length ? `<tfoot><tr><td class="l" colspan="8">Total</td>${[
       total(protection, p => p.currentValue), total(protection, annualPremium), total(protection, annualPremium) / 12,
-    ].map(v => `<td>${amount(v)}</td>`).join('')}<td></td>${BENEFITS.map(b => `<td>${amount(total(protection, p => p.cover[b.key]))}</td>`).join('')}<td></td></tr></tfoot>` : '');
+    ].map(v => `<td>${amount(v)}</td>`).join('')}<td></td>${BENEFITS.map(b => `<td>${amount(total(protection, p => p.cover[b.key]))}</td>`).join('')}<td></td></tr>${singleNote(protection)}</tfoot>` : '');
 
   const wealth = inGroup('wealth');
   byId('wealth-table').innerHTML = table(
     [['S/N'], ['Insurer', 'l'], ['Policy / account no.', 'l'], ['Plan + riders', 'l'], ['Type', 'l'], ['Start', 'l'],
-      ['Payment end', 'l'], ['Maturity', 'l'], ['Projected IRR'], ['Single premium'], ['Premium / yr'], ['Premium / mth'], ['Mode', 'l'],
+      ['Payment end', 'l'], ['Maturity', 'l'], ['Projected IRR'], ['Premium / yr'], ['Premium / mth'], ['Mode', 'l'],
       ['Current value'], ['Projected value'], ['Remarks', 'l']],
     wealth.map((p, i) => `<tr>${basics(p, i)}<td class="l">${dateLabel(p.premiumEndDate)}</td><td class="l">${dateLabel(p.endDate)}</td>
-      <td>${p.projectedIrr ? `${p.projectedIrr}%` : '–'}</td><td>${amount(p.frequency === 'single' ? p.premium : 0)}</td>${premiumCells(p)}
+      <td>${p.projectedIrr ? `${p.projectedIrr}%` : '–'}</td>${premiumCells(p)}
       <td>${amount(p.currentValue)}</td><td>${amount(p.projectedValue)}</td><td class="l">${esc(p.remarks)}</td></tr>`).join(''),
     wealth.length ? `<tfoot><tr><td class="l" colspan="9">Total</td>${[
-      total(wealth, p => p.frequency === 'single' ? p.premium : 0), total(wealth, annualPremium), total(wealth, annualPremium) / 12,
+      total(wealth, annualPremium), total(wealth, annualPremium) / 12,
     ].map(v => `<td>${amount(v)}</td>`).join('')}<td></td><td>${amount(total(wealth, p => p.currentValue))}</td>
-      <td>${amount(total(wealth, p => p.projectedValue))}</td><td></td></tr></tfoot>` : '');
+      <td>${amount(total(wealth, p => p.projectedValue))}</td><td></td></tr>${singleNote(wealth)}</tfoot>` : '');
 
   // Retirement payouts by age, against the monthly goal when one is set.
   const goal = client.retirementGoal;
