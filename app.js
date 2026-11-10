@@ -278,38 +278,61 @@ function renderReport() {
     const yearly = single ? p.premium : annualPremium(p);
     const paid = col => (p.frequency === col || (single && col === 'yearly')) && p.premium ? ' class="paid"' : '';
     return `<td${paid('yearly')}>${amount(yearly)}${single && p.premium ? ' <span class="tag">single</span>' : ''}</td>
-      <td${paid('monthly')}>${single ? '' : amount(yearly / 12)}</td><td class="l">${esc(p.paymentMode || '–')}</td>`;
+      <td${paid('monthly')}>${single ? '' : amount(yearly / 12)}</td><td>${esc(p.paymentMode || '–')}</td>`;
   };
   const singleNote = list => list.some(p => p.frequency === 'single' && p.premium)
     ? `<tr class="note"><td colspan="99"><div>Red: how the premium is paid. Single premiums are one-off payments, so they aren't in the yearly and monthly totals.</div></td></tr>`
     : `<tr class="note"><td colspan="99"><div>Red: how the premium is paid.</div></td></tr>`;
-  const basics = (p, i) => `<td>${i + 1}</td><td class="l">${esc(p.insurer || '–')}</td><td class="l">${esc(p.policyNo || '–')}</td>
-    <td class="l">${esc(p.plan || '–')}</td><td class="l">${esc(p.type)}</td><td class="l">${dateLabel(p.startDate)}</td>`;
+  const basics = (p, i) => `<td>${i + 1}</td><td>${esc(p.insurer || '–')}</td><td>${esc(p.policyNo || '–')}</td>
+    <td>${esc(p.plan || '–')}</td><td>${esc(p.type)}</td><td class="date">${dateLabel(p.startDate)}</td>`;
+
+  // The two portfolio tables follow the Excel template: a two-row header grouped and
+  // coloured by g-info (policy details), g-pay (payment), g-cover (sums assured or
+  // values) and g-note (remarks), and a totals block below. Colours show when printed.
+  // A group is [label, class] (one column, two rows high) or [label, class, [sub-labels]].
+  const sheetHead = groups => `<thead><tr>${groups.map(([label, cls, cols]) => cols
+      ? `<th class="${cls}" colspan="${cols.length}">${label}</th>`
+      : `<th class="${cls}" rowspan="2">${label}</th>`).join('')}</tr>
+    <tr>${groups.filter(g => g[2]).map(([, cls, cols]) => cols.map(c => `<th class="${cls}">${c}</th>`).join('')).join('')}</tr></thead>`;
+  const sheetBody = (rows, cols) => `<tbody>${rows || `<tr><td colspan="${cols}">None yet.</td></tr>`}</tbody>`;
+  const cell = (cls, v, extra = '') => `<td class="${cls}"${extra}>${v}</td>`;
+  const premiumTotals = list => [total(list, annualPremium), total(list, annualPremium) / 12];
 
   const protection = inGroup('protection');
-  byId('protection-table').innerHTML = table(
-    [['S/N'], ['Insurer', 'l'], ['Policy no.', 'l'], ['Plan + riders', 'l'], ['Type', 'l'], ['Start', 'l'], ['Premium end', 'l'],
-      ['Policy end', 'l'], ['Current value'], ['Premium / yr'], ['Premium / mth'], ['Mode', 'l'],
-      ...BENEFITS.map(b => [b.label]), ['Remarks', 'l']],
-    protection.map((p, i) => `<tr>${basics(p, i)}<td class="l">${dateLabel(p.premiumEndDate)}</td><td class="l">${dateLabel(p.endDate)}</td>
+  const riskGroups = [
+    ...['S/N', 'Co.', 'Policy No.', 'Plan + Riders', 'Type', 'Start Date', 'Premium End Date', 'Policy End Date',
+      'Current Net Realisable Value'].map(l => [l, 'g-info']),
+    ['Payment Frequency', 'g-pay', ['Yearly', 'Monthly']], ['Payment Mode', 'g-pay'],
+    ['Basic Sum Assured', 'g-cover', BENEFITS.map(b => b.label)], ['Remarks', 'g-note'],
+  ];
+  byId('protection-table').innerHTML = sheetHead(riskGroups) + sheetBody(
+    protection.map((p, i) => `<tr>${basics(p, i)}<td class="date">${dateLabel(p.premiumEndDate)}</td><td class="date">${dateLabel(p.endDate)}</td>
       <td>${amount(p.currentValue)}</td>${premiumCells(p)}${BENEFITS.map(b => `<td>${amount(p.cover[b.key])}</td>`).join('')}
-      <td class="l">${esc(p.remarks)}</td></tr>`).join(''),
-    protection.length ? `<tfoot><tr><td class="l" colspan="8">Total</td>${[
-      total(protection, p => p.currentValue), total(protection, annualPremium), total(protection, annualPremium) / 12,
-    ].map(v => `<td>${amount(v)}</td>`).join('')}<td></td>${BENEFITS.map(b => `<td>${amount(total(protection, p => p.cover[b.key]))}</td>`).join('')}<td></td></tr>${singleNote(protection)}</tfoot>` : '');
+      <td>${esc(p.remarks)}</td></tr>`).join(''), 13 + BENEFITS.length) +
+    (protection.length ? `<tfoot>
+      <tr>${cell('g-info', 'Total', ' colspan="8" rowspan="2"')}${cell('g-info', 'Total Current NRV')}${cell('g-pay', 'Yearly Premium')}
+        ${cell('g-pay', 'Monthly Premium')}${cell('g-pay', '', ' rowspan="2"')}${cell('g-cover', 'Total Coverage', ` colspan="${BENEFITS.length}"`)}${cell('g-note', '', ' rowspan="2"')}</tr>
+      <tr>${cell('g-info', amount(total(protection, p => p.currentValue)))}${premiumTotals(protection).map(v => cell('g-pay', amount(v))).join('')}
+        ${BENEFITS.map(b => cell('g-cover', amount(total(protection, p => p.cover[b.key])))).join('')}</tr>
+      ${singleNote(protection)}</tfoot>` : '');
 
   const wealth = inGroup('wealth');
-  byId('wealth-table').innerHTML = table(
-    [['S/N'], ['Insurer', 'l'], ['Policy / account no.', 'l'], ['Plan + riders', 'l'], ['Type', 'l'], ['Start', 'l'],
-      ['Payment end', 'l'], ['Maturity', 'l'], ['Projected IRR'], ['Premium / yr'], ['Premium / mth'], ['Mode', 'l'],
-      ['Current value'], ['Projected value'], ['Remarks', 'l']],
-    wealth.map((p, i) => `<tr>${basics(p, i)}<td class="l">${dateLabel(p.premiumEndDate)}</td><td class="l">${dateLabel(p.endDate)}</td>
+  const wealthGroups = [
+    ...['S/N', 'Co.', 'Policy / Account No.', 'Plan + Riders', 'Type', 'Start Date', 'Payment End Date', 'Maturity Date',
+      'Projected IRR'].map(l => [l, 'g-info']),
+    ['Payment Frequency', 'g-pay', ['Yearly', 'Monthly']], ['Payment Mode', 'g-pay'],
+    ['Current Net Realisable Value', 'g-cover'], ['Projected Net Realisable Value', 'g-cover'], ['Remarks', 'g-note'],
+  ];
+  byId('wealth-table').innerHTML = sheetHead(wealthGroups) + sheetBody(
+    wealth.map((p, i) => `<tr>${basics(p, i)}<td class="date">${dateLabel(p.premiumEndDate)}</td><td class="date">${dateLabel(p.endDate)}</td>
       <td>${p.projectedIrr ? `${p.projectedIrr}%` : '–'}</td>${premiumCells(p)}
-      <td>${amount(p.currentValue)}</td><td>${amount(p.projectedValue)}</td><td class="l">${esc(p.remarks)}</td></tr>`).join(''),
-    wealth.length ? `<tfoot><tr><td class="l" colspan="9">Total</td>${[
-      total(wealth, annualPremium), total(wealth, annualPremium) / 12,
-    ].map(v => `<td>${amount(v)}</td>`).join('')}<td></td><td>${amount(total(wealth, p => p.currentValue))}</td>
-      <td>${amount(total(wealth, p => p.projectedValue))}</td><td></td></tr>${singleNote(wealth)}</tfoot>` : '');
+      <td>${amount(p.currentValue)}</td><td>${amount(p.projectedValue)}</td><td>${esc(p.remarks)}</td></tr>`).join(''), 16) +
+    (wealth.length ? `<tfoot>
+      <tr>${cell('g-info', 'Total', ' colspan="9" rowspan="2"')}${cell('g-pay', 'Yearly Premium')}${cell('g-pay', 'Monthly Premium')}
+        ${cell('g-pay', '', ' rowspan="2"')}${cell('g-cover', 'Total Current NRV')}${cell('g-cover', 'Total Projected NRV')}${cell('g-note', '', ' rowspan="2"')}</tr>
+      <tr>${premiumTotals(wealth).map(v => cell('g-pay', amount(v))).join('')}
+        ${cell('g-cover', amount(total(wealth, p => p.currentValue)))}${cell('g-cover', amount(total(wealth, p => p.projectedValue)))}</tr>
+      ${singleNote(wealth)}</tfoot>` : '');
 
   // Retirement payouts by age, against the monthly goal when one is set.
   const goal = client.retirementGoal;
@@ -321,7 +344,14 @@ function renderReport() {
       ${goal ? (r.monthly >= goal ? '<td class="ok">Met</td>' : `<td class="short">${money(goal - r.monthly)} short</td>`) : ''}</tr>`).join(''));
 
   const by = [client.adviserName, client.adviserMobile && `M: ${client.adviserMobile}`].filter(Boolean).join('\n');
-  byId('report-foot').textContent = `${by ? `Prepared by:\n${by}\n\n` : ''}${DISCLAIMER}`;
+  const foot = `${by ? `Prepared by:\n${by}\n\n` : ''}${DISCLAIMER}`;
+  byId('report-foot').textContent = foot;
+  // Printed only: each portfolio page gets the Excel template's title and footer.
+  for (const el of document.querySelectorAll('[data-sheet-title]')) {
+    el.textContent = `${el.dataset.sheetTitle}${client.name ? ` for ${client.name}` : ''}`
+      + (client.preparedOn ? `\nPrepared on ${dateLabel(client.preparedOn)}` : '');
+  }
+  for (const el of document.querySelectorAll('.sheet-foot')) el.textContent = foot;
 }
 
 fillClient();

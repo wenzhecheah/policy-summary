@@ -18,7 +18,10 @@ entered leaves the browser unless you save the client file.
 3. The report below updates as each policy is added, changed or removed:
    coverage and shortfalls, the Risk management and Wealth management tables,
    and the retirement payout timeline against the client's monthly goal.
-4. **Print / Save as PDF** prints the report only (A4 landscape).
+4. **Print / Save as PDF** prints the report only (A4 landscape). The Risk
+   Management and Wealth Management portfolios each print on their own page,
+   laid out like the Excel template's sheets (colour-coded column groups,
+   totals block, "Prepared by" and disclaimer).
 5. **Save client file** downloads the client's details as a `.json` file.
    Use **Open client file** at the next review to update it instead of starting
    again. Keep these files private: they hold the client's personal data.

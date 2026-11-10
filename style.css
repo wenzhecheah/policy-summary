@@ -191,3 +191,40 @@ tfoot .note td { font-weight: 400; }
   .wide td:last-child { min-width: 0; }
   td.short, td.ok, td.paid, tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Portfolio sheets: laid out like the Excel template's Risk Management and
+   Wealth Management sheets. On screen they keep the site's navy; printed, each
+   is its own page with the template's title, colours and footer. */
+.sheet th, .sheet td, .sheet td.l, .sheet th.l { text-align: center; vertical-align: middle; }
+.sheet thead tr + tr th { border-top: 1px solid rgba(255, 255, 255, .25); }
+.sheet thead th { border-left: 1px solid rgba(255, 255, 255, .15); }
+.sheet tfoot tr:first-child td { font-size: 12px; color: var(--muted); }
+.sheet tfoot .note td, .sheet tfoot .note td > div { text-align: left; }
+.sheet-title, .sheet-foot { display: none; }
+@media print {
+  .sheet { break-before: page; }
+  .sheet h2 { display: none; }
+  .sheet-title { display: block; white-space: pre-line; text-align: center; font: 700 22px/1.25 Arial, sans-serif;
+    color: #000; margin: 0 0 12px; }
+  .sheet-foot { display: block; white-space: pre-line; text-align: center; font: 11px/1.4 Arial, sans-serif; color: #000;
+    margin: 16px 0 0; }
+  .sheet table { font-family: Arial, sans-serif; border-collapse: collapse; font-size: 10.5px; }
+  .sheet th, .sheet td { padding: 6px 4px; white-space: normal; }
+  .sheet td:last-child { min-width: 0; }
+  .sheet td.date { white-space: nowrap; }
+  .sheet .tag { font-size: inherit; color: inherit; }
+  .timeline-sheet { break-before: page; }
+  .sheet th, .sheet td { border: 1px solid #000; font-weight: 700; color: #000; background: #fff; }
+  .sheet tbody tr td { background: #fff !important; }
+  .sheet .table-wrap { border-top: 0; }
+  .sheet th, .sheet tfoot td { color: #fff; }
+  .sheet .g-info { background: #0070c0; }
+  .wealth-sheet .g-info { background: #2f5496; }
+  .sheet .g-pay { background: #ff4466; }
+  .sheet .g-cover { background: #00b050; }
+  .sheet .g-note { background: #333f4f; }
+  .sheet tfoot tr:first-child td { font-size: inherit; color: #fff; }
+  .sheet td.paid { color: #e00000; }
+  .sheet tfoot .note td { background: #fff; color: #000; font-weight: 400; border: 0; }
+  .sheet th, .sheet td, .sheet tfoot td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
