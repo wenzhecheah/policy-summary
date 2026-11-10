@@ -90,3 +90,32 @@ test('client files round-trip and bad values are cleaned', () => {
   assert.throws(() => call('readClientFile', { policies: 'x' }), /not a Policy Summary/);
   assert.throws(() => call('readClientFile', null), /not a Policy Summary/);
 });
+
+test('IRR estimate from premiums and the projected value at maturity', () => {
+  // $5,000 a year for 10 years, $70,000 at the end of year 15: about 3.22% a year.
+  const yearly = call('estimateIrr', policy({ premium: 5000, frequency: 'yearly', startDate: '2020-01-01',
+    premiumEndDate: '2030-01-01', endDate: '2035-01-01', projectedValue: 70000 }));
+  assert.equal(yearly.payments, 10);
+  assert.equal(yearly.paid, 50000);
+  assert.ok(Math.abs(yearly.rate - 0.0322) < 0.0005, `got ${yearly.rate}`);
+  // A single premium: $50,000 growing to $62,000 over 10 years is 1.24^(1/10) - 1.
+  const single = call('estimateIrr', policy({ premium: 50000, frequency: 'single', startDate: '2024-05-01',
+    endDate: '2034-05-01', projectedValue: 62000 }));
+  assert.equal(single.payments, 1);
+  assert.ok(Math.abs(single.rate - (1.24 ** 0.1 - 1)) < 0.0002, `got ${single.rate}`);
+  // Monthly: 15 years of payments.
+  const monthly = call('estimateIrr', policy({ premium: 500, frequency: 'monthly', startDate: '2020-01-10',
+    premiumEndDate: '2035-01-10', endDate: '2035-01-10', projectedValue: 120000 }));
+  assert.equal(monthly.payments, 180);
+  assert.ok(monthly.rate > 0.03 && monthly.rate < 0.04, `got ${monthly.rate}`);
+  // Getting back less than was paid is a negative IRR.
+  assert.ok(call('estimateIrr', policy({ premium: 50000, frequency: 'single', startDate: '2024-01-01',
+    endDate: '2029-01-01', projectedValue: 45000 })).rate < 0);
+  // Month-end start dates don't skip February.
+  assert.equal(new Date(call('addMonths', '2024-01-31', 1)).toISOString().slice(0, 10), '2024-02-29');
+  // Missing or impossible inputs say what's needed.
+  assert.deepEqual(call('estimateIrr', policy({})).missing,
+    ['premium', 'start date', 'premium end date', 'maturity date', 'projected value at maturity']);
+  assert.deepEqual(call('estimateIrr', policy({ premium: 1, frequency: 'single', startDate: '2030-01-01',
+    endDate: '2020-01-01', projectedValue: 1 })).missing, ['a maturity date after the start date']);
+});

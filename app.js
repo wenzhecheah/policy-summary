@@ -78,6 +78,10 @@ function policyForm(p) {
           ${num('payoutTo', `To age <span class="hint">(blank: lifelong, shown to ${LIFELONG_TO_AGE})</span>`, p.payoutTo)}
         </div>
       </details>
+      <details${wealth ? ' open' : ''}>
+        <summary>IRR calculator</summary>
+        <div id="irr-calc" aria-live="polite"></div>
+      </details>
       ${text('remarks', 'Remarks', p.remarks)}
       <p class="error" id="policy-error" role="alert"></p>
       <div class="form-actions">
@@ -99,8 +103,31 @@ function policyList() {
     .replace('None yet.', 'No policies yet. Fill in the form above and press Add policy.');
 }
 
+// The IRR calculator: an estimate from the premiums and maturity value in the form.
+function renderIrr() {
+  const box = byId('irr-calc'), r = estimateIrr(draft);
+  if (r.missing) {
+    box.innerHTML = `<p class="hint">To estimate the IRR, enter the ${r.missing.join(', ').replace(/, ([^,]*)$/, ' and $1')}.</p>`;
+    return;
+  }
+  const freq = { monthly: 'monthly', yearly: 'yearly', single: 'single' }[draft.frequency];
+  const lastPaid = draft.frequency === 'single' ? '' : ` to ${dateLabel(new Date(addMonths(draft.startDate,
+    (r.payments - 1) * (draft.frequency === 'monthly' ? 1 : 12))).toISOString().slice(0, 10))}`;
+  const pct = r.rate === null ? null : Math.round(r.rate * 10000) / 100;
+  box.innerHTML = `<dl class="irr-dl">
+      <dt>Premiums paid</dt><dd>${r.payments} ${freq} payment${r.payments > 1 ? 's' : ''} of ${money(draft.premium)},
+        from ${dateLabel(draft.startDate)}${lastPaid}: ${money(r.paid)} in total</dd>
+      <dt>Value at maturity</dt><dd>${money(r.received)} on ${dateLabel(draft.endDate)}</dd>
+      <dt>Estimated IRR</dt><dd class="irr-rate">${pct === null ? 'Can\'t be worked out from these figures' : `${pct.toFixed(2)}% a year`}</dd>
+    </dl>
+    ${pct === null ? '' : `<button type="button" class="secondary" data-action="use-irr" data-irr="${pct}">Use ${pct.toFixed(2)}% as the projected IRR</button>`}
+    <p class="hint">An estimate from the premiums and the projected value at maturity above. Cash payouts taken out
+      along the way aren't included, and rider premiums lower it. The insurer's illustrated figure may differ slightly.</p>`;
+}
+
 function renderPolicies() {
   byId('policy-form').innerHTML = policyForm(draft);
+  renderIrr();
   byId('policy-list').innerHTML = policyList();
 }
 
@@ -136,6 +163,7 @@ byId('form').addEventListener('input', e => {
     if (sub) draft[key][sub] = parse(0, value);
     else draft[key] = parse(blankPolicy()[key], value);
     draftChanged = true;
+    renderIrr();
   }
 });
 
@@ -149,6 +177,12 @@ byId('form').addEventListener('focusout', e => {
 
 byId('policy-form').addEventListener('click', e => {
   const action = e.target.dataset.action;
+  if (action === 'use-irr') {
+    draft.projectedIrr = Number(e.target.dataset.irr);
+    byId('policy-form').querySelector('[data-field="projectedIrr"]').value = draft.projectedIrr;
+    draftChanged = true;
+    return;
+  }
   if (action === 'save') {
     if (!draft.insurer.trim() && !draft.plan.trim()) {
       byId('policy-error').textContent = 'Choose the insurer or enter the plan name.';

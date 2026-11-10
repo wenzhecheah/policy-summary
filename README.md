@@ -15,6 +15,11 @@ entered leaves the browser unless you save the client file.
    added** list, and the form clears for the next one. Use **Edit** in the
    list to change a policy (then **Save changes**, or **Cancel**), and
    **Remove** to delete it.
+   The **IRR calculator** section estimates a policy's IRR from its premium,
+   how often it's paid, start date, premium end date, maturity date and
+   projected value at maturity, and can copy it into Projected IRR. Cash
+   payouts taken out along the way aren't included, so prefer the insurer's
+   illustrated figure where there is one.
 3. The report below updates as each policy is added, changed or removed:
    coverage and shortfalls, the Risk management and Wealth management tables,
    and the retirement payout timeline against the client's monthly goal.

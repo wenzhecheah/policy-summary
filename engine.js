@@ -100,3 +100,58 @@ function payoutTimeline(policies, birthYear) {
   }
   return [...rows.values()].sort((a, b) => a.age - b.age).map(r => ({ ...r, monthly: r.yearly / 12 }));
 }
+
+// ---- IRR estimate -------------------------------------------------------------
+
+// Date 'YYYY-MM-DD' plus `months` months, as a UTC timestamp. The day is kept,
+// or moved back to the month's last day (31 Jan + 1 month = 28/29 Feb).
+function addMonths(date, months) {
+  const [y, m, d] = date.split('-').map(Number);
+  const last = new Date(Date.UTC(y, m - 1 + months + 1, 0)).getUTCDate();
+  return Date.UTC(y, m - 1 + months, Math.min(d, last));
+}
+
+// Yearly rate r where the cash flows' value today is zero. `flows` are
+// [years from the first payment, amount] (premiums negative, money back
+// positive). Found by bisection between -99% and +100% a year; null if no
+// rate in that range balances them.
+function irr(flows) {
+  const npv = r => flows.reduce((sum, [t, cf]) => sum + cf / (1 + r) ** t, 0);
+  let lo = -0.99, hi = 1;
+  if (npv(lo) * npv(hi) > 0) return null;
+  for (let i = 0; i < 200; i++) {
+    const mid = (lo + hi) / 2;
+    if (npv(lo) * npv(mid) <= 0) hi = mid; else lo = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+// Estimated IRR for a policy from its premiums and projected value at maturity.
+// Premiums are paid from startDate, monthly or yearly, while before
+// premiumEndDate (a single premium once, on startDate); the projected value is
+// received on endDate. Cash payouts taken out along the way are not included.
+// Returns { missing: [field labels] } if something it needs is blank, else
+// { rate, payments, paid, received } (rate as a fraction, or null).
+function estimateIrr(p) {
+  const single = p.frequency === 'single';
+  const missing = [
+    !(p.premium > 0) && 'premium', !p.startDate && 'start date',
+    !single && !p.premiumEndDate && 'premium end date', !p.endDate && 'maturity date',
+    !(p.projectedValue > 0) && 'projected value at maturity',
+  ].filter(Boolean);
+  if (missing.length) return { missing };
+  const start = addMonths(p.startDate, 0), end = addMonths(p.endDate, 0);
+  if (end <= start) return { missing: ['a maturity date after the start date'] };
+  const years = t => (t - start) / (365.25 * 86400000);
+  const step = p.frequency === 'monthly' ? 1 : 12;
+  const flows = [];
+  // At most 100 years of payments, so a typo can't loop for ever.
+  for (let k = 0; flows.length < 1200; k += step) {
+    const t = addMonths(p.startDate, k);
+    if (single ? k > 0 : t >= addMonths(p.premiumEndDate, 0) || t > end) break;
+    flows.push([years(t), -p.premium]);
+  }
+  if (!flows.length) return { missing: ['a premium end date after the start date'] };
+  flows.push([years(end), p.projectedValue]);
+  return { rate: irr(flows), payments: flows.length - 1, paid: (flows.length - 1) * p.premium, received: p.projectedValue };
+}

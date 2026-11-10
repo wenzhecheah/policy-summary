@@ -159,6 +159,12 @@ form { margin-top: 16px; }
 button.secondary { background: var(--surface); color: var(--navy); border-color: var(--border); }
 button.secondary:hover { background: var(--surface); border-color: var(--gold); }
 #policy-error:empty { display: none; }
+#irr-calc { display: grid; gap: 12px; justify-items: start; }
+.irr-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 14px; }
+.irr-dl dt { color: var(--muted); }
+.irr-dl dd { margin: 0; }
+.irr-rate { font-weight: 600; color: var(--navy); font-size: 17px; }
+#irr-calc button { font-size: 12px; padding: 8px 12px; letter-spacing: .12em; }
 .policy-list { margin-top: 0; }
 .policy-list td { vertical-align: middle; }
 .policy-list tr.editing td { background: rgba(201, 158, 16, .14) !important; }
