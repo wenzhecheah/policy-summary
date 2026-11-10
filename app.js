@@ -3,8 +3,8 @@ const byId = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 const money = n => n.toLocaleString('en-SG', { style: 'currency', currency: 'SGD' }); // $1,234.56
 const amount = n => n ? money(n) : '–';
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const dateLabel = s => { if (!s) return '–'; const [y, m, d] = s.split('-').map(Number); return `${d} ${MONTHS[m - 1]} ${y}`; };
+// 'YYYY-MM-DD' as dd/mm/yyyy.
+const dateLabel = s => { if (!s) return '–'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
 const today = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
 const FREQUENCIES = [['monthly', 'Monthly'], ['yearly', 'Yearly'], ['single', 'Single premium']];
 
