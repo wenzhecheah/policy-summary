@@ -155,9 +155,17 @@ form { margin-top: 16px; }
 .grid4 { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
 .grid4 > label { display: flex; flex-direction: column; gap: 6px; }
 .grid4 > label > input, .grid4 > label > select { margin-top: auto; }
-#policies { display: grid; gap: 16px; }
-#policies:empty::before { content: 'No policies yet. Use "Add policy" to add the first one.'; color: var(--muted); }
-#add-policy { justify-self: start; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+button.secondary { background: var(--surface); color: var(--navy); border-color: var(--border); }
+button.secondary:hover { background: var(--surface); border-color: var(--gold); }
+#policy-error:empty { display: none; }
+.policy-list { margin-top: 0; }
+.policy-list td { vertical-align: middle; }
+.policy-list tr.editing td { background: rgba(201, 158, 16, .14) !important; }
+.row-actions { text-align: right; white-space: nowrap; }
+.row-actions button { font-size: 12px; padding: 6px 10px; letter-spacing: .1em; background: var(--surface);
+  color: var(--navy); border-color: var(--border); }
+.row-actions button:hover { background: var(--surface); border-color: var(--gold); }
 button.remove { justify-self: start; background: var(--surface); color: var(--down); border-color: var(--border);
   font-size: 12px; padding: 8px 12px; letter-spacing: .12em; }
 button.remove:hover { background: var(--surface); border-color: var(--down); }

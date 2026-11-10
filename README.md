@@ -9,13 +9,17 @@ entered leaves the browser unless you save the client file.
 
 ## How to use it
 
-1. Enter the client's details and add each policy (type, insurer, dates,
-   premium, sums assured, values and payouts).
-2. The report below the form updates as you type: coverage and shortfalls,
-   the Risk management and Wealth management tables, and the retirement
-   payout timeline against the client's monthly goal.
-3. **Print / Save as PDF** prints the report only (A4 landscape).
-4. **Save client file** downloads the client's details as a `.json` file.
+1. Enter the client's details.
+2. Fill in one policy at a time (type, insurer, dates, premium, sums assured,
+   values and payouts) and press **Add policy**. It joins the **Policies
+   added** list, and the form clears for the next one. Use **Edit** in the
+   list to change a policy (then **Save changes**, or **Cancel**), and
+   **Remove** to delete it.
+3. The report below updates as each policy is added, changed or removed:
+   coverage and shortfalls, the Risk management and Wealth management tables,
+   and the retirement payout timeline against the client's monthly goal.
+4. **Print / Save as PDF** prints the report only (A4 landscape).
+5. **Save client file** downloads the client's details as a `.json` file.
    Use **Open client file** at the next review to update it instead of starting
    again. Keep these files private: they hold the client's personal data.
 

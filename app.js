@@ -11,6 +11,9 @@ const FREQUENCIES = [['monthly', 'Monthly'], ['yearly', 'Yearly'], ['single', 'S
 const newClient = () => ({ ...blankClient(), preparedOn: today(), adviserName: ADVISER.name, adviserMobile: ADVISER.mobile });
 let state = { client: newClient(), policies: [] };
 let unsaved = false;
+// The policy being entered or edited. It joins the list (and the report) only
+// when added; `editing` is its index in the list when editing one.
+let draft = blankPolicy(), editing = null, draftChanged = false;
 
 // A form value, stored as the same kind of value as the blank one.
 const parse = (blankValue, raw) => fit({ v: blankValue }, { v: raw }).v;
@@ -21,7 +24,7 @@ function fillClient() {
   for (const el of document.querySelectorAll('[data-client]')) el.value = shown(state.client[el.dataset.client]);
 }
 
-function policyCard(p, i) {
+function policyForm(p) {
   const options = (list, sel) => list.map(([v, label]) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(label)}</option>`).join('');
   const field = (key, label, type, value, extra = '') =>
     `<label>${label} <input type="${type}" data-field="${key}" value="${esc(shown(value))}" ${extra}></label>`;
@@ -29,9 +32,9 @@ function policyCard(p, i) {
   const text = (key, label, value) => field(key, label, 'text', value, 'autocomplete="off"');
   const date = (key, label, value) => field(key, label, 'date', value);
   const wealth = groupOf(p.type) === 'wealth';
-  return `<div class="panel policy" data-index="${i}">
+  return `<div class="panel policy">
     <fieldset>
-      <legend>Policy ${i + 1}</legend>
+      <legend>${editing === null ? 'Add a policy' : `Edit policy ${editing + 1}`}</legend>
       <div class="grid4">
         <label>Type <select data-field="type">${options(POLICY_TYPES.map(t => [t.label, t.label]), p.type)}</select></label>
         ${text('insurer', 'Insurer', p.insurer)}
@@ -62,52 +65,100 @@ function policyCard(p, i) {
         </div>
       </details>
       ${text('remarks', 'Remarks', p.remarks)}
-      <button type="button" class="remove" data-remove="${i}">Remove policy</button>
+      <p class="error" id="policy-error" role="alert"></p>
+      <div class="form-actions">
+        <button type="button" data-action="save">${editing === null ? 'Add policy' : 'Save changes'}</button>
+        ${editing === null ? '' : '<button type="button" class="secondary" data-action="cancel">Cancel</button>'}
+      </div>
     </fieldset>
   </div>`;
 }
 
-function renderPolicies() {
-  byId('policies').innerHTML = state.policies.map(policyCard).join('');
+// The list of added policies: one short row each, with Edit and Remove.
+function policyList() {
+  const rows = state.policies.map((p, i) => `<tr${i === editing ? ' class="editing"' : ''}>
+    <td>${i + 1}</td><td class="l">${esc(p.type)}</td><td class="l">${esc(p.insurer || '–')}</td><td class="l">${esc(p.plan || '–')}</td>
+    <td>${amount(annualPremium(p))}</td>
+    <td class="row-actions"><button type="button" data-edit="${i}" aria-label="Edit ${esc(policyName(p))}">Edit</button>
+      <button type="button" class="remove" data-remove="${i}" aria-label="Remove ${esc(policyName(p))}">Remove</button></td></tr>`).join('');
+  return table([['#'], ['Type', 'l'], ['Insurer', 'l'], ['Plan + riders', 'l'], ['Premium / yr'], ['', 'l']], rows)
+    .replace('None yet.', 'No policies yet. Fill in the form above and press Add policy.');
 }
+
+function renderPolicies() {
+  byId('policy-form').innerHTML = policyForm(draft);
+  byId('policy-list').innerHTML = policyList();
+}
+
+function resetDraft() {
+  draft = blankPolicy();
+  editing = null;
+  draftChanged = false;
+}
+const discardDraftOk = () => !draftChanged || confirm('Discard the policy in the form? It hasn\'t been added.');
 
 byId('form').addEventListener('input', e => {
   const el = e.target;
   if (el.dataset.client) {
     state.client[el.dataset.client] = parse(blankClient()[el.dataset.client], el.value);
+    unsaved = true;
+    renderReport();
   } else if (el.dataset.field) {
-    const p = state.policies[+el.closest('.policy').dataset.index];
+    // The draft only reaches the report once it is added.
     const [key, sub] = el.dataset.field.split('.');
-    if (sub) p[key][sub] = parse(0, el.value);
-    else p[key] = parse(blankPolicy()[key], el.value);
-  } else return;
-  unsaved = true;
-  renderReport();
+    if (sub) draft[key][sub] = parse(0, el.value);
+    else draft[key] = parse(blankPolicy()[key], el.value);
+    draftChanged = true;
+  }
 });
 
-byId('policies').addEventListener('click', e => {
-  const i = e.target.dataset.remove;
-  if (i === undefined || !confirm(`Remove ${policyName(state.policies[+i])}?`)) return;
-  state.policies.splice(+i, 1);
-  unsaved = true;
+byId('policy-form').addEventListener('click', e => {
+  const action = e.target.dataset.action;
+  if (action === 'save') {
+    if (!draft.insurer.trim() && !draft.plan.trim()) {
+      byId('policy-error').textContent = 'Enter the insurer or the plan name.';
+      byId('policy-form').querySelector('[data-field="insurer"]').focus();
+      return;
+    }
+    if (editing === null) state.policies.push(draft);
+    else state.policies[editing] = draft;
+    unsaved = true;
+  } else if (action !== 'cancel') return;
+  resetDraft();
   renderPolicies();
   renderReport();
+  byId('policy-form').querySelector('select').focus();
 });
 
-byId('add-policy').addEventListener('click', () => {
-  state.policies.push(blankPolicy());
-  unsaved = true;
-  renderPolicies();
-  renderReport();
-  byId('policies').lastElementChild.querySelector('select').focus();
+byId('policy-list').addEventListener('click', e => {
+  const { edit, remove } = e.target.dataset;
+  if (edit !== undefined) {
+    if (!discardDraftOk()) return;
+    draft = structuredClone(state.policies[+edit]);
+    editing = +edit;
+    draftChanged = false;
+    renderPolicies();
+    byId('policy-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    byId('policy-form').querySelector('select').focus({ preventScroll: true });
+  } else if (remove !== undefined) {
+    const i = +remove;
+    if (!confirm(`Remove ${policyName(state.policies[i])}?`)) return;
+    state.policies.splice(i, 1);
+    if (editing === i) resetDraft();
+    else if (editing > i) editing--;
+    unsaved = true;
+    renderPolicies();
+    renderReport();
+  }
 });
 
 // ---- Client files ----
-const discardOk = () => !unsaved || confirm('The current client has unsaved changes. Discard them?');
+const discardOk = () => !(unsaved || draftChanged) || confirm('The current client has unsaved changes. Discard them?');
 
 function show(newState) {
   state = newState;
   unsaved = false;
+  resetDraft();
   byId('file-error').textContent = '';
   fillClient();
   renderPolicies();
@@ -129,6 +180,7 @@ byId('open-file').addEventListener('change', async e => {
 });
 
 byId('save-client').addEventListener('click', () => {
+  if (draftChanged && !confirm('The policy in the form hasn\'t been added, so it won\'t be in the file. Save anyway?')) return;
   const blob = new Blob([JSON.stringify(clientFile(state.client, state.policies), null, 2)], { type: 'application/json' });
   const slug = state.client.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'client';
   const a = document.createElement('a');
@@ -141,7 +193,7 @@ byId('save-client').addEventListener('click', () => {
 
 byId('print').addEventListener('click', () => window.print());
 
-window.addEventListener('beforeunload', e => { if (unsaved) e.preventDefault(); });
+window.addEventListener('beforeunload', e => { if (unsaved || draftChanged) e.preventDefault(); });
 
 // ---- Report ----
 const table = (head, rows, foot = '') =>
