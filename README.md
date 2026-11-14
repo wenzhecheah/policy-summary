@@ -49,6 +49,7 @@ Edit `config.js` to change:
 - `engine.js`: all calculations (no page code), tested in `tests/`.
 - `app.js`: the form, the report, and saving and opening client files.
 - `to-top.js`: the back-to-top button (as in the BTO Planner).
+- `fade-in.js`: the page's parts fade in one by one when it opens.
 - `style.css`: the CPF Forecast Calculator's styles, with additions at the end.
 
 Run the tests (Node 18 or later):
